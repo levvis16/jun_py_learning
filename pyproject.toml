@@ -1,0 +1,26 @@
+[project]
+name = "microshop"
+version = "0.1.0"
+description = "first project"
+authors = [
+    {name = "levvis16",email = "zoomcross2@gmail.com"}
+]
+license = {text = "MIT"}
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "fastapi (>=0.119.0,<0.120.0)",
+    "pytest (>=8.4.2,<9.0.0)",
+    "uvicorn (>=0.37.0,<0.38.0)",
+    "pydantic[email] (>=2.12.0,<3.0.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[dependency-groups]
+dev = [
+    "black (>=25.9.0,<26.0.0)"
+]
