@@ -5,7 +5,7 @@ from sqlalchemy.engine import Result
 from sqlalchemy.orm import joinedload, selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.models import db_helper, User, Profile, Post
+from core.models import db_helper, User, Profile, Post, Order, Product
 
 
 async def create_user(session: AsyncSession, username: str) -> User:
@@ -83,7 +83,7 @@ async def get_users_with_posts(
     users = await session.scalars(stmt)
 
     # for user in users.unique():  # type: User
-    for user in users:  # type: User
+    for user in users:  
         print("**" * 10)
         print(user)
         for post in user.posts:
@@ -103,7 +103,7 @@ async def get_users_with_posts_and_profiles(
     )
     users = await session.scalars(stmt)
 
-    for user in users:  # type: User
+    for user in users: 
         print("**" * 10)
         print(user, user.profile and user.profile.first_name)
         for post in user.posts:
@@ -114,7 +114,7 @@ async def get_posts_with_authors(session: AsyncSession):
     stmt = select(Post).options(joinedload(Post.user)).order_by(Post.id)
     posts = await session.scalars(stmt)
 
-    for post in posts:  # type: Post
+    for post in posts: 
         print("post", post)
         print("author", post.user)
 
@@ -136,6 +136,25 @@ async def get_profiles_with_users_and_users_with_posts(session: AsyncSession):
         print(profile.first_name, profile.user)
         print(profile.user.posts)
 
+async def create_product(session: AsyncSession, name: str, description: str, price: int,) -> Product:
+    product = Product(
+        name=name,
+        description=description,
+        price=price,
+    )
+    session.add(product)
+    await session.commit()
+    return product
+
+
+async def get_orders_with_products(session: AsyncSession) -> list[Order]:
+    stmt = (select(Order).options(selectinload(Order.products),).order_by(Order.id))
+    orders = await session.scalars(stmt)
+
+    return list(orders)
+
+async def main_relations(session: AsyncSession):
+    pass
 
 async def main():
     async with db_helper.session_factory() as session:
@@ -175,6 +194,42 @@ async def main():
         await get_users_with_posts_and_profiles(session=session)
         await get_profiles_with_users_and_users_with_posts(session=session)
 
+
+async def create_order(session: AsyncSession, promocode: str | None = None,) -> Order:
+    order = Order(promocode=promocode)
+    session.add(order)
+    await session.commit()
+    return order
+
+async def demo_m2m(session: AsyncSession):
+    order_one = await create_order(session)
+    order_promo = await create_order(session, promocode="promo")
+
+    mouse = await create_product(
+        session,
+        name="Mouse",           # ← РАВНО!
+        description="Great gaming",  # ← РАВНО!
+        price=1000              # ← РАВНО!
+    )
+
+    keyboard = await create_product(
+        session,
+        name="Keyboard",           # ← РАВНО!
+        description="gaming",  # ← РАВНО!
+        price=150             # ← РАВНО!
+    )
+    order_one = await session.scalar(select(Order).where(Order.id == order_one.id).options(selectinload(Order.products)),)
+    
+    order_promo = await session.scalar(select(Order).where(Order.id == order_promo.id).options(selectinload(Order.products)),)
+    order_one.products.append(mouse)
+    order_one.products.append(keyboard)
+    order_promo.products = [keyboard, mouse] 
+    await session.commit()
+
+async def main():
+    async with db_helper.session_factory() as session:
+        #await main_relations(session)
+        await demo_m2m(session)
 
 if __name__ == "__main__":
     asyncio.run(main())

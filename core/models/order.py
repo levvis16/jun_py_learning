@@ -3,17 +3,15 @@ from sqlalchemy.orm import relationship
 from .base import Base
 from .order_product_assotiation import order_product_association  # ← ИМПОРТИРУЙ ТАБЛИЦУ
 
-class Product(Base):
-    __tablename__ = "products"
+class Order(Base):
+    __tablename__ = "orders"
     
     id = Column(Integer, primary_key=True)
-    name = Column(String, nullable=False)
-    description = Column(String, nullable=False)
-    price = Column(Integer, nullable=False)
+    promocode = Column(String, nullable=True)
     
     # Отношение через таблицу
-    orders = relationship(
-        "Order",
+    products = relationship(
+        "Product",
         secondary=order_product_association,  # ← ПЕРЕДАВАЙ ТАБЛИЦУ, а не класс
-        back_populates="products"
+        back_populates="orders"
     )
